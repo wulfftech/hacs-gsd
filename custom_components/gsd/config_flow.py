@@ -1,4 +1,4 @@
-"""Config flow for Donetick integration."""
+"""Config flow for GSD integration."""
 from typing import Any
 import logging
 import voluptuous as vol
@@ -17,7 +17,7 @@ from homeassistant.helpers.selector import (
 )
 
 from .const import DOMAIN, CONF_URL, CONF_TOKEN, CONF_SHOW_DUE_IN, CONF_CREATE_UNIFIED_LIST, CONF_CREATE_ASSIGNEE_LISTS, CONF_REFRESH_INTERVAL, DEFAULT_REFRESH_INTERVAL
-from .api import DonetickApiClient
+from .api import GsdApiClient
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -37,8 +37,8 @@ def _config_to_seconds(config: dict[str, int]):
         seconds=config["seconds"],
     ).total_seconds()
 
-class DonetickConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Handle a config flow for Donetick."""
+class GsdConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+    """Handle a config flow for GSD."""
 
     VERSION = 1
     
@@ -55,7 +55,7 @@ class DonetickConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             try:
                 session = async_get_clientsession(self.hass)
-                client = DonetickApiClient(
+                client = GsdApiClient(
                     user_input[CONF_URL],
                     user_input[CONF_TOKEN],
                     session,
@@ -97,7 +97,7 @@ class DonetickConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             }
             
             return self.async_create_entry(
-                title="Donetick",
+                title="GSD",
                 data=final_data
             )
 
@@ -117,10 +117,10 @@ class DonetickConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     @callback
     def async_get_options_flow(config_entry):
         """Get the options flow for this handler."""
-        return DonetickOptionsFlowHandler(config_entry)
+        return GsdOptionsFlowHandler(config_entry)
 
-class DonetickOptionsFlowHandler(config_entries.OptionsFlow):
-    """Handle Donetick options."""
+class GsdOptionsFlowHandler(config_entries.OptionsFlow):
+    """Handle GSD options."""
 
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
         """Initialize options flow."""

@@ -1,4 +1,4 @@
-"""Donetick reward sensors: catalog and pending redemptions."""
+"""GSD reward sensors: catalog and pending redemptions."""
 import logging
 
 from homeassistant.core import HomeAssistant
@@ -25,8 +25,8 @@ async def async_setup_reward_sensors(
             _LOGGER.debug("Rewards coordinator not available; skipping reward sensors")
             return
         async_add_entities([
-            DonetickRewardsCatalogSensor(coordinator, config_entry),
-            DonetickPendingRedemptionsSensor(coordinator, config_entry),
+            GsdRewardsCatalogSensor(coordinator, config_entry),
+            GsdPendingRedemptionsSensor(coordinator, config_entry),
         ])
     except Exception as e:
         _LOGGER.error("Error setting up reward sensors: %s", e)
@@ -43,19 +43,19 @@ class _RewardsBase(CoordinatorEntity, SensorEntity):
     def device_info(self) -> dict:
         return {
             "identifiers": {(DOMAIN, f"rewards_{self._config_entry.entry_id}")},
-            "name": "Donetick Rewards",
-            "manufacturer": "Donetick",
+            "name": "GSD Rewards",
+            "manufacturer": "GSD",
             "model": "Rewards",
         }
 
 
-class DonetickRewardsCatalogSensor(_RewardsBase):
+class GsdRewardsCatalogSensor(_RewardsBase):
     """Number of active rewards, with the full catalog as an attribute."""
 
     def __init__(self, coordinator, config_entry: ConfigEntry) -> None:
         super().__init__(coordinator, config_entry)
-        self._attr_unique_id = f"dt_{config_entry.entry_id}_rewards_catalog"
-        self._attr_name = "Donetick Rewards Catalog"
+        self._attr_unique_id = f"gsd_{config_entry.entry_id}_rewards_catalog"
+        self._attr_name = "GSD Rewards Catalog"
         self._attr_icon = "mdi:gift"
         self._attr_native_unit_of_measurement = "rewards"
 
@@ -76,13 +76,13 @@ class DonetickRewardsCatalogSensor(_RewardsBase):
         }
 
 
-class DonetickPendingRedemptionsSensor(_RewardsBase):
+class GsdPendingRedemptionsSensor(_RewardsBase):
     """Number of pending redemptions, with details as an attribute."""
 
     def __init__(self, coordinator, config_entry: ConfigEntry) -> None:
         super().__init__(coordinator, config_entry)
-        self._attr_unique_id = f"dt_{config_entry.entry_id}_pending_redemptions"
-        self._attr_name = "Donetick Pending Redemptions"
+        self._attr_unique_id = f"gsd_{config_entry.entry_id}_pending_redemptions"
+        self._attr_name = "GSD Pending Redemptions"
         self._attr_icon = "mdi:gift-open"
         self._attr_native_unit_of_measurement = "redemptions"
 

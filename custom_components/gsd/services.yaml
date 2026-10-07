@@ -1,6 +1,6 @@
 complete_task:
   name: Complete Task
-  description: Complete a Donetick task with optional user attribution
+  description: Complete a GSD task with optional user attribution
   fields:
     task_id:
       name: Task ID
@@ -12,7 +12,7 @@ complete_task:
           mode: box
     completed_by:
       name: Completed By User ID
-      description: The Donetick user ID who completed the task (optional)
+      description: The GSD user ID who completed the task (optional)
       required: false
       selector:
         number:
@@ -20,14 +20,14 @@ complete_task:
           mode: box
     config_entry_id:
       name: Config Entry ID
-      description: The specific Donetick integration to use (optional, uses first if not specified)
+      description: The specific GSD integration to use (optional, uses first if not specified)
       required: false
       selector:
         text:
 
 create_task:
   name: Create Task
-  description: Create a new Donetick task
+  description: Create a new GSD task
   fields:
     name:
       name: Task Name
@@ -50,7 +50,7 @@ create_task:
         text:
     created_by:
       name: Created By User ID
-      description: The Donetick user ID who created the task (optional)
+      description: The GSD user ID who created the task (optional)
       required: false
       selector:
         number:
@@ -58,14 +58,14 @@ create_task:
           mode: box
     config_entry_id:
       name: Config Entry ID
-      description: The specific Donetick integration to use (optional, uses first if not specified)
+      description: The specific GSD integration to use (optional, uses first if not specified)
       required: false
       selector:
         text:
 
 update_task:
   name: Update Task
-  description: Update an existing Donetick task
+  description: Update an existing GSD task
   fields:
     task_id:
       name: Task ID
@@ -96,7 +96,7 @@ update_task:
         text:
     config_entry_id:
       name: Config Entry ID
-      description: The specific Donetick integration to use (optional, uses first if not specified)
+      description: The specific GSD integration to use (optional, uses first if not specified)
       required: false
       selector:
         text:
@@ -115,7 +115,7 @@ skip_task:
           mode: box
     completed_by:
       name: Completed By User ID
-      description: The Donetick user ID to attribute the skip to (optional)
+      description: The GSD user ID to attribute the skip to (optional)
       required: false
       selector:
         number:
@@ -123,14 +123,14 @@ skip_task:
           mode: box
     config_entry_id:
       name: Config Entry ID
-      description: The specific Donetick integration to use (optional, uses first if not specified)
+      description: The specific GSD integration to use (optional, uses first if not specified)
       required: false
       selector:
         text:
 
 delete_task:
   name: Delete Task
-  description: Delete a Donetick task
+  description: Delete a GSD task
   fields:
     task_id:
       name: Task ID
@@ -142,7 +142,7 @@ delete_task:
           mode: box
     config_entry_id:
       name: Config Entry ID
-      description: The specific Donetick integration to use (optional, uses first if not specified)
+      description: The specific GSD integration to use (optional, uses first if not specified)
       required: false
       selector:
         text:

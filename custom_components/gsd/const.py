@@ -1,5 +1,5 @@
-"""Constants for the Donetick integration."""
-DOMAIN = "donetick"
+"""Constants for the GSD integration."""
+DOMAIN = "gsd"
 TODO_STORAGE_KEY = f"{DOMAIN}_items"
 
 CONF_URL = "url"

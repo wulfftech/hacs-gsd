@@ -1,4 +1,4 @@
-"""The Donetick integration."""
+"""The GSD integration."""
 import logging
 from datetime import timedelta
 import voluptuous as vol
@@ -9,7 +9,7 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from .const import DOMAIN, CONF_URL, CONF_TOKEN, CONF_SHOW_DUE_IN, CONF_REFRESH_INTERVAL, DEFAULT_REFRESH_INTERVAL
-from .api import DonetickApiClient
+from .api import GsdApiClient
 
 _LOGGER = logging.getLogger(__name__)
 PLATFORMS = [Platform.TODO, Platform.SENSOR, Platform.SWITCH, Platform.NUMBER, Platform.TEXT, Platform.CALENDAR]
@@ -55,11 +55,11 @@ SKIP_TASK_SCHEMA = vol.Schema({
 })
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up Donetick from a config entry."""
+    """Set up GSD from a config entry."""
     hass.data.setdefault(DOMAIN, {})
 
     session = async_get_clientsession(hass)
-    client = DonetickApiClient(
+    client = GsdApiClient(
         entry.data[CONF_URL],
         entry.data[CONF_TOKEN],
         session,
@@ -69,7 +69,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     coordinator = DataUpdateCoordinator(
         hass,
         _LOGGER,
-        name="donetick_chores",
+        name="gsd_chores",
         update_method=client.async_get_tasks,
         update_interval=timedelta(seconds=refresh_interval_seconds),
     )
@@ -171,10 +171,10 @@ async def async_complete_task_service(hass: HomeAssistant, call: ServiceCall) ->
             _LOGGER.error("Config entry not found for: %s", config_entry_id)
             return
     else:
-        # Use the first Donetick integration if no specific entry provided
+        # Use the first GSD integration if no specific entry provided
         entries = [entry for entry in hass.config_entries.async_entries(DOMAIN)]
         if not entries:
-            _LOGGER.error("No Donetick integration found")
+            _LOGGER.error("No GSD integration found")
             return
         entry = entries[0]
     
@@ -309,10 +309,10 @@ async def _get_config_entry(hass: HomeAssistant, config_entry_id: str = None) ->
             _LOGGER.error("Config entry not found for: %s", config_entry_id)
             return None
     else:
-        # Use the first Donetick integration if no specific entry provided
+        # Use the first GSD integration if no specific entry provided
         entries = [entry for entry in hass.config_entries.async_entries(DOMAIN)]
         if not entries:
-            _LOGGER.error("No Donetick integration found")
+            _LOGGER.error("No GSD integration found")
             return None
         entry = entries[0]
     

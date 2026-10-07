@@ -1,4 +1,4 @@
-"""Donetick models."""
+"""GSD models."""
 import logging
 from dataclasses import dataclass
 from datetime import datetime
@@ -14,7 +14,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 def _parse_datetime(value: Any) -> Optional[datetime]:
-    """Parse a Donetick timestamp, returning None for empty or invalid values."""
+    """Parse a GSD timestamp, returning None for empty or invalid values."""
     if value is None:
         return None
     if isinstance(value, datetime):
@@ -25,12 +25,12 @@ def _parse_datetime(value: Any) -> Optional[datetime]:
     try:
         return datetime.fromisoformat(value.replace("Z", "+00:00"))
     except ValueError:
-        _LOGGER.debug("Unable to parse Donetick datetime: %s", value)
+        _LOGGER.debug("Unable to parse GSD datetime: %s", value)
         return None
 
 @dataclass
-class DonetickMember:
-    """Donetick circle member model."""
+class GsdMember:
+    """GSD circle member model."""
     id: int
     user_id: int
     circle_id: int
@@ -45,8 +45,8 @@ class DonetickMember:
     updated_at: Optional[str] = None
     
     @classmethod
-    def from_json(cls, data: dict) -> "DonetickMember":
-        """Create a DonetickMember from JSON data."""
+    def from_json(cls, data: dict) -> "GsdMember":
+        """Create a GsdMember from JSON data."""
         return cls(
             id=data["id"],
             user_id=data["userId"],
@@ -63,18 +63,18 @@ class DonetickMember:
         )
     
     @classmethod
-    def from_json_list(cls, data: List[dict]) -> List["DonetickMember"]:
-        """Create a list of DonetickMembers from JSON data."""
+    def from_json_list(cls, data: List[dict]) -> List["GsdMember"]:
+        """Create a list of GsdMembers from JSON data."""
         return [cls.from_json(member) for member in data]
 
 @dataclass
-class DonetickAssignee:
-    """Donetick assignee model."""
+class GsdAssignee:
+    """GSD assignee model."""
     user_id: int
 
 @dataclass
-class DonetickTask:
-    """Donetick task model."""
+class GsdTask:
+    """GSD task model."""
     id: int
     name: str
     next_due_date: Optional[datetime]
@@ -97,8 +97,8 @@ class DonetickTask:
     timer_updated_at: Optional[datetime] = None
     
     @classmethod
-    def from_json(cls, data: dict) -> "DonetickTask":
-        """Create a DonetickTask from JSON data."""
+    def from_json(cls, data: dict) -> "GsdTask":
+        """Create a GsdTask from JSON data."""
         # Handle assignedTo field - could be in different formats
         assigned_to = None
         if data.get("assignedTo"):
@@ -129,14 +129,14 @@ class DonetickTask:
         )
     
     @classmethod
-    def from_json_list(cls, data: List[dict]) -> List["DonetickTask"]:
-        """Create a list of DonetickTasks from JSON data."""
+    def from_json_list(cls, data: List[dict]) -> List["GsdTask"]:
+        """Create a list of GsdTasks from JSON data."""
         return [cls.from_json(task) for task in data]
 
 
 @dataclass
-class DonetickChoreHistory:
-    """Donetick chore history model."""
+class GsdChoreHistory:
+    """GSD chore history model."""
     id: int
     chore_id: int
     performed_at: Optional[datetime]
@@ -153,8 +153,8 @@ class DonetickChoreHistory:
     timer_updated_at: Optional[datetime] = None
 
     @classmethod
-    def from_json(cls, data: dict) -> "DonetickChoreHistory":
-        """Create a DonetickChoreHistory from JSON data."""
+    def from_json(cls, data: dict) -> "GsdChoreHistory":
+        """Create a GsdChoreHistory from JSON data."""
         return cls(
             id=data["id"],
             chore_id=data["choreId"],
@@ -173,13 +173,13 @@ class DonetickChoreHistory:
         )
 
     @classmethod
-    def from_json_list(cls, data: List[dict]) -> List["DonetickChoreHistory"]:
-        """Create a list of DonetickChoreHistory objects from JSON data."""
+    def from_json_list(cls, data: List[dict]) -> List["GsdChoreHistory"]:
+        """Create a list of GsdChoreHistory objects from JSON data."""
         return [cls.from_json(history) for history in data]
 
 @dataclass 
-class DonetickThing:
-    """Donetick thing model."""
+class GsdThing:
+    """GSD thing model."""
     id: int
     name: str
     type: str  # text, number, boolean, action
@@ -191,8 +191,8 @@ class DonetickThing:
     thing_chores: Optional[List] = None
     
     @classmethod
-    def from_json(cls, data: dict) -> "DonetickThing":
-        """Create a DonetickThing from JSON data."""
+    def from_json(cls, data: dict) -> "GsdThing":
+        """Create a GsdThing from JSON data."""
         return cls(
             id=data["id"],
             name=data["name"],
@@ -206,7 +206,7 @@ class DonetickThing:
         )
     
     @classmethod
-    def from_json_list(cls, data: List[dict]) -> List["DonetickThing"]:
-        """Create a list of DonetickThings from JSON data."""
+    def from_json_list(cls, data: List[dict]) -> List["GsdThing"]:
+        """Create a list of GsdThings from JSON data."""
         return [cls.from_json(thing) for thing in data]
     

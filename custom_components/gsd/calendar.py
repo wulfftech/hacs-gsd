@@ -1,4 +1,4 @@
-"""Calendar platform for Donetick."""
+"""Calendar platform for GSD."""
 import logging
 from datetime import date, datetime, timedelta, timezone
 from typing import List, Optional
@@ -13,9 +13,9 @@ from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
 )
 
-from .api import DonetickApiClient
+from .api import GsdApiClient
 from .const import DOMAIN
-from .model import DonetickChoreHistory, DonetickMember, DonetickTask
+from .model import GsdChoreHistory, GsdMember, GsdTask
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -48,7 +48,7 @@ RECURRING_FREQUENCY_TYPES = {
     "adaptive",
 }
 
-def _get_member_name(members: List[DonetickMember], user_id: Optional[int]) -> Optional[str]:
+def _get_member_name(members: List[GsdMember], user_id: Optional[int]) -> Optional[str]:
     """Resolve a user ID to a display name."""
     if user_id is None:
         return None
@@ -58,7 +58,7 @@ def _get_member_name(members: List[DonetickMember], user_id: Optional[int]) -> O
     return None
 
 
-def _task_description(task: DonetickTask, members: List[DonetickMember]) -> str:
+def _task_description(task: GsdTask, members: List[GsdMember]) -> str:
     """Build a calendar description for a task."""
     assignee = _get_member_name(members, task.assigned_to)
     description = task.description or ""
@@ -67,12 +67,12 @@ def _task_description(task: DonetickTask, members: List[DonetickMember]) -> str:
     return description
 
 
-def _metadata_dict(task: DonetickTask) -> dict:
+def _metadata_dict(task: GsdTask) -> dict:
     """Return frequency metadata as a dict."""
     return task.frequency_metadata if isinstance(task.frequency_metadata, dict) else {}
 
 
-def _metadata_time(task: DonetickTask) -> Optional[datetime]:
+def _metadata_time(task: GsdTask) -> Optional[datetime]:
     """Return the metadata time value if present."""
     time_value = _metadata_dict(task).get("time")
     if not isinstance(time_value, str) or not time_value:
@@ -80,22 +80,22 @@ def _metadata_time(task: DonetickTask) -> Optional[datetime]:
     try:
         return datetime.fromisoformat(time_value.replace("Z", "+00:00"))
     except ValueError:
-        _LOGGER.debug("Unable to parse Donetick frequencyMetadata.time: %s", time_value)
+        _LOGGER.debug("Unable to parse GSD frequencyMetadata.time: %s", time_value)
         return None
 
 
-def _metadata_timezone(task: DonetickTask) -> timezone | ZoneInfo:
+def _metadata_timezone(task: GsdTask) -> timezone | ZoneInfo:
     """Return the task timezone from metadata, falling back to UTC."""
     timezone_name = _metadata_dict(task).get("timezone")
     if isinstance(timezone_name, str) and timezone_name:
         try:
             return ZoneInfo(timezone_name)
         except ZoneInfoNotFoundError:
-            _LOGGER.debug("Unknown Donetick timezone %s, falling back to UTC", timezone_name)
+            _LOGGER.debug("Unknown GSD timezone %s, falling back to UTC", timezone_name)
     return timezone.utc
 
 
-def _metadata_days(task: DonetickTask) -> list[str]:
+def _metadata_days(task: GsdTask) -> list[str]:
     """Return lower-cased weekday names from metadata."""
     days = _metadata_dict(task).get("days")
     if not isinstance(days, list):
@@ -107,7 +107,7 @@ def _metadata_days(task: DonetickTask) -> list[str]:
     return normalized_days
 
 
-def _metadata_months(task: DonetickTask) -> list[str]:
+def _metadata_months(task: GsdTask) -> list[str]:
     """Return lower-cased month names from metadata."""
     months = _metadata_dict(task).get("months")
     if not isinstance(months, list):
@@ -119,13 +119,13 @@ def _metadata_months(task: DonetickTask) -> list[str]:
     return normalized_months
 
 
-def _metadata_unit(task: DonetickTask) -> Optional[str]:
+def _metadata_unit(task: GsdTask) -> Optional[str]:
     """Return the interval unit from metadata."""
     unit = _metadata_dict(task).get("unit")
     return unit if isinstance(unit, str) and unit else None
 
 
-def _metadata_week_pattern(task: DonetickTask) -> str:
+def _metadata_week_pattern(task: GsdTask) -> str:
     """Return the recurrence week pattern."""
     pattern = _metadata_dict(task).get("weekPattern")
     if not isinstance(pattern, str) or not pattern:
@@ -133,7 +133,7 @@ def _metadata_week_pattern(task: DonetickTask) -> str:
     return pattern
 
 
-def _metadata_occurrences(task: DonetickTask) -> list[str]:
+def _metadata_occurrences(task: GsdTask) -> list[str]:
     """Return normalized occurrence values from metadata."""
     metadata = _metadata_dict(task)
     occurrences = metadata.get("occurrences")
@@ -162,7 +162,7 @@ def _is_date_only_due(value: datetime) -> bool:
     }
 
 
-def _task_has_due_time(task: DonetickTask) -> bool:
+def _task_has_due_time(task: GsdTask) -> bool:
     """Return true when the task has a meaningful due time."""
     if _metadata_time(task) is not None:
         return True
@@ -170,7 +170,7 @@ def _task_has_due_time(task: DonetickTask) -> bool:
     return task.next_due_date is not None and not _is_date_only_due(task.next_due_date)
 
 
-def _best_task_start(task: DonetickTask) -> Optional[datetime | date]:
+def _best_task_start(task: GsdTask) -> Optional[datetime | date]:
     """Return the best start time for an active/scheduled task."""
     if task.status in (CHORE_STATUS_IN_PROGRESS, CHORE_STATUS_PAUSED):
         return task.start_time or task.timer_updated_at or task.updated_at or task.next_due_date
@@ -212,8 +212,8 @@ def _event_in_range(event: CalendarEvent, range_start: datetime, range_end: date
     return start < _comparison_datetime(range_end) and end > _comparison_datetime(range_start)
 
 
-def _task_to_event(task: DonetickTask, members: List[DonetickMember]) -> Optional[CalendarEvent]:
-    """Convert a DonetickTask to a CalendarEvent using the best available time."""
+def _task_to_event(task: GsdTask, members: List[GsdMember]) -> Optional[CalendarEvent]:
+    """Convert a GsdTask to a CalendarEvent using the best available time."""
     start = _best_task_start(task)
     if start is None:
         return None
@@ -229,11 +229,11 @@ def _task_to_event(task: DonetickTask, members: List[DonetickMember]) -> Optiona
         start=start,
         end=_event_end(start, duration),
         description=_task_description(task, members),
-        uid=f"donetick_{task.id}",
+        uid=f"gsd_{task.id}",
     )
 
 
-def _normalize_occurrence_start(task: DonetickTask, due_value: datetime) -> datetime | date:
+def _normalize_occurrence_start(task: GsdTask, due_value: datetime) -> datetime | date:
     """Normalize a due datetime to the display start used by the calendar."""
     if _task_has_due_time(task):
         return due_value
@@ -241,14 +241,14 @@ def _normalize_occurrence_start(task: DonetickTask, due_value: datetime) -> date
 
 
 def _scheduled_task_event(
-    task: DonetickTask,
-    members: List[DonetickMember],
+    task: GsdTask,
+    members: List[GsdMember],
     due_value: datetime,
     uid_suffix: str = "",
 ) -> CalendarEvent:
     """Build a scheduled task calendar event from a due datetime."""
     start = _normalize_occurrence_start(task, due_value)
-    uid = f"donetick_{task.id}" if not uid_suffix else f"donetick_{task.id}_{uid_suffix}"
+    uid = f"gsd_{task.id}" if not uid_suffix else f"gsd_{task.id}_{uid_suffix}"
     return CalendarEvent(
         summary=task.name,
         start=start,
@@ -284,7 +284,7 @@ def _add_years(value: datetime, years: int) -> datetime:
         return value.replace(year=value.year + years, day=28)
 
 
-def _apply_due_time(task: DonetickTask, base_date: datetime) -> datetime:
+def _apply_due_time(task: GsdTask, base_date: datetime) -> datetime:
     """Apply the metadata time-of-day to a base datetime."""
     metadata_time = _metadata_time(task)
     if metadata_time is None:
@@ -367,8 +367,8 @@ def _find_next_due_for_occurrence_pattern(
     return None
 
 
-def _schedule_next_due(task: DonetickTask, current_due: datetime) -> Optional[datetime]:
-    """Mirror Donetick's recurrence scheduling for projecting future events."""
+def _schedule_next_due(task: GsdTask, current_due: datetime) -> Optional[datetime]:
+    """Mirror GSD's recurrence scheduling for projecting future events."""
     frequency_type = task.frequency_type
     if frequency_type in {"once", "no_repeat", "trigger"}:
         return None
@@ -451,8 +451,8 @@ def _schedule_next_due(task: DonetickTask, current_due: datetime) -> Optional[da
 
 
 def _generate_occurrences(
-    task: DonetickTask,
-    members: List[DonetickMember],
+    task: GsdTask,
+    members: List[GsdMember],
     range_start: datetime,
     range_end: datetime,
 ) -> List[CalendarEvent]:
@@ -492,9 +492,9 @@ def _generate_occurrences(
 
 
 def _history_to_event(
-    history: DonetickChoreHistory,
-    tasks_by_id: dict[int, DonetickTask],
-    members: List[DonetickMember],
+    history: GsdChoreHistory,
+    tasks_by_id: dict[int, GsdTask],
+    members: List[GsdMember],
 ) -> Optional[CalendarEvent]:
     """Convert a chore history row to a timed calendar event."""
     end = history.end_time or history.performed_at or history.updated_at or history.created_at
@@ -519,7 +519,7 @@ def _history_to_event(
         event_end = start + DEFAULT_LOGGED_DURATION
 
     task = tasks_by_id.get(history.chore_id)
-    task_name = task.name if task else f"Donetick chore {history.chore_id}"
+    task_name = task.name if task else f"GSD chore {history.chore_id}"
     status_label = HISTORY_STATUS_LABELS.get(history.status, "Logged")
     completed_by = _get_member_name(members, history.completed_by) or history.completed_by
     assigned_to = _get_member_name(members, history.assigned_to) or history.assigned_to
@@ -539,7 +539,7 @@ def _history_to_event(
         start=start,
         end=event_end,
         description="\n".join(description_parts),
-        uid=f"donetick_history_{history.id}",
+        uid=f"gsd_history_{history.id}",
     )
 
 
@@ -548,7 +548,7 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up Donetick calendar from a config entry."""
+    """Set up GSD calendar from a config entry."""
     data = hass.data[DOMAIN][entry.entry_id]
     coordinator = data["coordinator"]
     client = data["client"]
@@ -556,14 +556,14 @@ async def async_setup_entry(
 
     async_add_entities(
         [
-            DonetickCalendar(coordinator, client, circle_members, entry),
-            DonetickActivityCalendar(coordinator, client, circle_members, entry),
+            GsdCalendar(coordinator, client, circle_members, entry),
+            GsdActivityCalendar(coordinator, client, circle_members, entry),
         ]
     )
 
 
-class DonetickCalendar(CoordinatorEntity, CalendarEntity):
-    """A calendar entity representing Donetick chores."""
+class GsdCalendar(CoordinatorEntity, CalendarEntity):
+    """A calendar entity representing GSD chores."""
 
     _attr_has_entity_name = True
     _attr_name = "Chores"
@@ -571,8 +571,8 @@ class DonetickCalendar(CoordinatorEntity, CalendarEntity):
     def __init__(
         self,
         coordinator: DataUpdateCoordinator,
-        client: DonetickApiClient,
-        circle_members: List[DonetickMember],
+        client: GsdApiClient,
+        circle_members: List[GsdMember],
         entry: ConfigEntry,
     ) -> None:
         """Initialize the calendar."""
@@ -582,14 +582,14 @@ class DonetickCalendar(CoordinatorEntity, CalendarEntity):
         self._attr_unique_id = f"{entry.entry_id}_calendar"
         self._attr_device_info = {
             "identifiers": {(DOMAIN, f"{entry.entry_id}_chores")},
-            "name": "Donetick Chores",
-            "manufacturer": "Donetick",
+            "name": "GSD Chores",
+            "manufacturer": "GSD",
         }
 
     @property
     def event(self) -> Optional[CalendarEvent]:
         """Return the next upcoming event (used for the entity state)."""
-        tasks: List[DonetickTask] = self.coordinator.data or []
+        tasks: List[GsdTask] = self.coordinator.data or []
         today = date.today()
         closest_event: Optional[CalendarEvent] = None
         closest_date: Optional[datetime] = None
@@ -616,7 +616,7 @@ class DonetickCalendar(CoordinatorEntity, CalendarEntity):
         end_date: datetime,
     ) -> List[CalendarEvent]:
         """Return events within a date range (called by the calendar card)."""
-        tasks: List[DonetickTask] = self.coordinator.data or []
+        tasks: List[GsdTask] = self.coordinator.data or []
         range_start = (
             start_date
             if isinstance(start_date, datetime)
@@ -643,8 +643,8 @@ class DonetickCalendar(CoordinatorEntity, CalendarEntity):
         return events
 
 
-class DonetickActivityCalendar(CoordinatorEntity, CalendarEntity):
-    """A calendar entity representing Donetick chore activity history."""
+class GsdActivityCalendar(CoordinatorEntity, CalendarEntity):
+    """A calendar entity representing GSD chore activity history."""
 
     _attr_has_entity_name = True
     _attr_name = "Activity Log"
@@ -652,8 +652,8 @@ class DonetickActivityCalendar(CoordinatorEntity, CalendarEntity):
     def __init__(
         self,
         coordinator: DataUpdateCoordinator,
-        client: DonetickApiClient,
-        circle_members: List[DonetickMember],
+        client: GsdApiClient,
+        circle_members: List[GsdMember],
         entry: ConfigEntry,
     ) -> None:
         """Initialize the activity log calendar."""
@@ -663,8 +663,8 @@ class DonetickActivityCalendar(CoordinatorEntity, CalendarEntity):
         self._attr_unique_id = f"{entry.entry_id}_activity_calendar"
         self._attr_device_info = {
             "identifiers": {(DOMAIN, f"{entry.entry_id}_chores")},
-            "name": "Donetick Chores",
-            "manufacturer": "Donetick",
+            "name": "GSD Chores",
+            "manufacturer": "GSD",
         }
 
     @property
@@ -679,7 +679,7 @@ class DonetickActivityCalendar(CoordinatorEntity, CalendarEntity):
         end_date: datetime,
     ) -> List[CalendarEvent]:
         """Return activity log events within a date range."""
-        tasks: List[DonetickTask] = self.coordinator.data or []
+        tasks: List[GsdTask] = self.coordinator.data or []
         range_start = (
             start_date
             if isinstance(start_date, datetime)

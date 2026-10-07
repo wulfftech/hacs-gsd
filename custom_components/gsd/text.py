@@ -1,4 +1,4 @@
-"""Donetick text platform."""
+"""GSD text platform."""
 from __future__ import annotations
 
 from homeassistant.core import HomeAssistant
@@ -12,5 +12,5 @@ async def async_setup_entry(
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up Donetick text entities."""
+    """Set up GSD text entities."""
     await thing_async_setup_entry(hass, config_entry, async_add_entities, "text")

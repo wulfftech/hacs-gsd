@@ -1,4 +1,4 @@
-"""Donetick sensor platform."""
+"""GSD sensor platform."""
 from __future__ import annotations
 import logging
 
@@ -16,7 +16,7 @@ async def async_setup_entry(
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up Donetick sensor entities."""
+    """Set up GSD sensor entities."""
     try:
         await thing_async_setup_entry(hass, config_entry, async_add_entities, "sensor")
     except Exception as err:

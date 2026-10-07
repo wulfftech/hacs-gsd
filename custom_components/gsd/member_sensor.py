@@ -1,4 +1,4 @@
-"""Donetick member sensors for points balance."""
+"""GSD member sensors for points balance."""
 import logging
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
@@ -27,7 +27,7 @@ async def async_setup_member_sensors(
         entities = []
         if members_coordinator.data:
             for member in members_coordinator.data:
-                entity = DonetickMemberPointsSensor(members_coordinator, config_entry, member)
+                entity = GsdMemberPointsSensor(members_coordinator, config_entry, member)
                 entities.append(entity)
                 _LOGGER.debug("Created points sensor for %s", member.display_name)
 
@@ -39,7 +39,7 @@ async def async_setup_member_sensors(
         _LOGGER.error("Error setting up member sensors: %s", e)
 
 
-class DonetickMemberPointsSensor(CoordinatorEntity, SensorEntity):
+class GsdMemberPointsSensor(CoordinatorEntity, SensorEntity):
     """Sensor for a member's current points balance."""
 
     def __init__(self, coordinator, config_entry: ConfigEntry, member) -> None:
@@ -47,7 +47,7 @@ class DonetickMemberPointsSensor(CoordinatorEntity, SensorEntity):
         super().__init__(coordinator)
         self._member = member
         self._config_entry = config_entry
-        self._attr_unique_id = f"dt_{config_entry.entry_id}_member_{member.user_id}_points"
+        self._attr_unique_id = f"gsd_{config_entry.entry_id}_member_{member.user_id}_points"
         self._attr_name = f"{member.display_name} Points"
         self._attr_icon = "mdi:star"
         self._attr_native_unit_of_measurement = "pts"

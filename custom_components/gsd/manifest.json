@@ -1,14 +1,13 @@
 {
-    "domain": "donetick",
-    "name": "Donetick",
+    "domain": "gsd",
+    "name": "GSD",
     "version": "2.0.1",
-    "documentation": "https://github.com/donetick/donetick-hass-integration",
-    "issue_tracker": "https://github.com/donetick/donetick-hass-integration/issues",
+    "documentation": "https://github.com/wulfftech/hacs-gsd",
+    "issue_tracker": "https://github.com/wulfftech/hacs-gsd/issues",
     "dependencies": [],
-    "codeowners": ["@meauxt"],
+    "codeowners": ["@wulfftech"],
     "requirements": [],
     "iot_class": "cloud_polling",
-    "icon": "mdi:checkbox-multiple-marked-circle",
+    "icon": "mdi:check-all",
     "config_flow": true
-    
 }

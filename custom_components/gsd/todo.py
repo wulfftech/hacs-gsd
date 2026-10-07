@@ -1,4 +1,4 @@
-"""Todo for Donetick integration."""
+"""Todo for GSD integration."""
 import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -19,8 +19,8 @@ from homeassistant.helpers.update_coordinator import (
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .const import DOMAIN, CONF_URL, CONF_TOKEN, CONF_SHOW_DUE_IN, CONF_CREATE_UNIFIED_LIST, CONF_CREATE_ASSIGNEE_LISTS
-from .api import DonetickApiClient
-from .model import DonetickTask, DonetickMember
+from .api import GsdApiClient
+from .model import GsdTask, GsdMember
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -29,7 +29,7 @@ async def async_setup_entry(
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up the Donetick todo platform."""
+    """Set up the GSD todo platform."""
     config = hass.data[DOMAIN][config_entry.entry_id]
     coordinator = config["coordinator"]
     client = config["client"]
@@ -39,7 +39,7 @@ async def async_setup_entry(
     # Create unified list if enabled (check options first, then data)
     create_unified = config_entry.options.get(CONF_CREATE_UNIFIED_LIST, config_entry.data.get(CONF_CREATE_UNIFIED_LIST, True))
     if create_unified:
-        entity = DonetickAllTasksList(coordinator, config_entry)
+        entity = GsdAllTasksList(coordinator, config_entry)
         entity._circle_members = []  # Will be set after we get members
         entities.append(entity)
     
@@ -63,7 +63,7 @@ async def async_setup_entry(
         for member in circle_members:
             if member.is_active:
                 _LOGGER.debug("Creating entity for member: %s (ID: %d)", member.display_name, member.user_id)
-                entity = DonetickAssigneeTasksList(coordinator, config_entry, member)
+                entity = GsdAssigneeTasksList(coordinator, config_entry, member)
                 entity._circle_members = circle_members
                 entities.append(entity)
     else:
@@ -74,8 +74,8 @@ async def async_setup_entry(
 
 # Remove old assignee detection function since we now use circle members
 
-class DonetickTodoListBase(CoordinatorEntity, TodoListEntity):
-    """Base class for Donetick Todo List entities."""
+class GsdTodoListBase(CoordinatorEntity, TodoListEntity):
+    """Base class for GSD Todo List entities."""
     
     _attr_supported_features = (
         TodoListEntityFeature.CREATE_TODO_ITEM | 
@@ -136,7 +136,7 @@ class DonetickTodoListBase(CoordinatorEntity, TodoListEntity):
         """Return additional state attributes for custom cards."""
         attributes = {
             "config_entry_id": self._config_entry.entry_id,
-            "donetick_url": self._config_entry.data[CONF_URL],
+            "gsd_url": self._config_entry.data[CONF_URL],
         }
         
         # Add circle members data for custom card user selection
@@ -155,7 +155,7 @@ class DonetickTodoListBase(CoordinatorEntity, TodoListEntity):
     async def async_create_todo_item(self, item: TodoItem) -> None:
         """Create a todo item."""
         session = async_get_clientsession(self.hass)
-        client = DonetickApiClient(
+        client = GsdApiClient(
             self._config_entry.data[CONF_URL],
             self._config_entry.data[CONF_TOKEN],
             session,
@@ -193,7 +193,7 @@ class DonetickTodoListBase(CoordinatorEntity, TodoListEntity):
             return None
         
         session = async_get_clientsession(self.hass)
-        client = DonetickApiClient(
+        client = GsdApiClient(
             self._config_entry.data[CONF_URL],
             self._config_entry.data[CONF_TOKEN],
             session,
@@ -240,7 +240,7 @@ class DonetickTodoListBase(CoordinatorEntity, TodoListEntity):
     async def async_delete_todo_items(self, uids: list[str]) -> None:
         """Delete todo items."""
         session = async_get_clientsession(self.hass)
-        client = DonetickApiClient(
+        client = GsdApiClient(
             self._config_entry.data[CONF_URL],
             self._config_entry.data[CONF_TOKEN],
             session,
@@ -283,27 +283,27 @@ class DonetickTodoListBase(CoordinatorEntity, TodoListEntity):
         _LOGGER.debug("No completion user determined, using default")
         return None
 
-class DonetickAllTasksList(DonetickTodoListBase):
-    """Donetick All Tasks List entity."""
+class GsdAllTasksList(GsdTodoListBase):
+    """GSD All Tasks List entity."""
 
     def __init__(self, coordinator: DataUpdateCoordinator, config_entry: ConfigEntry) -> None:
         """Initialize the All Tasks List."""
         super().__init__(coordinator, config_entry)
-        self._attr_unique_id = f"dt_{config_entry.entry_id}_all_tasks"
+        self._attr_unique_id = f"gsd_{config_entry.entry_id}_all_tasks"
         self._attr_name = "All Tasks"
 
     def _filter_tasks(self, tasks):
         """Return all active tasks."""
         return [task for task in tasks if task.is_active]
 
-class DonetickAssigneeTasksList(DonetickTodoListBase):
-    """Donetick Assignee-specific Tasks List entity."""
+class GsdAssigneeTasksList(GsdTodoListBase):
+    """GSD Assignee-specific Tasks List entity."""
 
-    def __init__(self, coordinator: DataUpdateCoordinator, config_entry: ConfigEntry, member: DonetickMember) -> None:
+    def __init__(self, coordinator: DataUpdateCoordinator, config_entry: ConfigEntry, member: GsdMember) -> None:
         """Initialize the Assignee Tasks List."""
         super().__init__(coordinator, config_entry)
         self._member = member
-        self._attr_unique_id = f"dt_{config_entry.entry_id}_{member.user_id}_tasks"
+        self._attr_unique_id = f"gsd_{config_entry.entry_id}_{member.user_id}_tasks"
         self._attr_name = f"{member.display_name}'s Tasks"
 
     def _filter_tasks(self, tasks):
@@ -311,13 +311,13 @@ class DonetickAssigneeTasksList(DonetickTodoListBase):
         return [task for task in tasks if task.is_active and task.assigned_to == self._member.user_id]
 
 # Keep the old class for backward compatibility
-class DonetickTodoListEntity(DonetickAllTasksList):
-    """Donetick Todo List entity."""
+class GsdTodoListEntity(GsdAllTasksList):
+    """GSD Todo List entity."""
     
-    """Legacy Donetick Todo List entity for backward compatibility."""
+    """Legacy GSD Todo List entity for backward compatibility."""
     
     def __init__(self, coordinator: DataUpdateCoordinator, config_entry: ConfigEntry) -> None:
         """Initialize the Todo List."""
         super().__init__(coordinator, config_entry)
-        self._attr_unique_id = f"dt_{config_entry.entry_id}"
+        self._attr_unique_id = f"gsd_{config_entry.entry_id}"
 

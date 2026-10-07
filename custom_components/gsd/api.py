@@ -1,4 +1,4 @@
-"""API client for Donetick."""
+"""API client for GSD."""
 import logging
 from datetime import datetime
 import json
@@ -7,11 +7,11 @@ import aiohttp
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .const import API_TIMEOUT
-from .model import DonetickTask, DonetickThing, DonetickMember, DonetickChoreHistory
+from .model import GsdTask, GsdThing, GsdMember, GsdChoreHistory
 _LOGGER = logging.getLogger(__name__)
 
-class DonetickApiClient:
-    """API client for Donetick."""
+class GsdApiClient:
+    """API client for GSD."""
 
     def __init__(self, base_url: str, token: str, session: aiohttp.ClientSession) -> None:
         """Initialize the API client."""
@@ -20,14 +20,14 @@ class DonetickApiClient:
         self._session = session
 
     def _headers(self) -> dict:
-        """Return headers for Donetick API requests."""
+        """Return headers for GSD API requests."""
         return {
             "secretkey": f"{self._token}",
             "Content-Type": "application/json",
         }
 
-    async def async_get_tasks(self) -> List[DonetickTask]:
-        """Get tasks from Donetick."""
+    async def async_get_tasks(self) -> List[GsdTask]:
+        """Get tasks from GSD."""
         headers = self._headers()
         
         try:
@@ -40,20 +40,20 @@ class DonetickApiClient:
                 data = await response.json()
                 
                 if not isinstance(data, list) :
-                    _LOGGER.error("Unexpected response format from Donetick API")
+                    _LOGGER.error("Unexpected response format from GSD API")
                     return []
                 
-                return [DonetickTask.from_json(task) for task in data]
+                return [GsdTask.from_json(task) for task in data]
                 
         except aiohttp.ClientError as err:
-            _LOGGER.error("Error fetching tasks from Donetick: %s", err)
+            _LOGGER.error("Error fetching tasks from GSD: %s", err)
             raise
         except (KeyError, ValueError, json.JSONDecodeError) as err:
-            _LOGGER.error("Error parsing Donetick response: %s", err)
+            _LOGGER.error("Error parsing GSD response: %s", err)
             return []
 
-    async def async_get_circle_members(self) -> List[DonetickMember]:
-        """Get circle members from Donetick."""
+    async def async_get_circle_members(self) -> List[GsdMember]:
+        """Get circle members from GSD."""
         headers = self._headers()
         
         try:
@@ -66,20 +66,20 @@ class DonetickApiClient:
                 data = await response.json()
                 
                 if not isinstance(data, list):
-                    _LOGGER.error("Unexpected response format from Donetick circle members API")
+                    _LOGGER.error("Unexpected response format from GSD circle members API")
                     return []
                 
-                return [DonetickMember.from_json(member) for member in data]
+                return [GsdMember.from_json(member) for member in data]
                 
         except aiohttp.ClientError as err:
-            _LOGGER.error("Error fetching circle members from Donetick: %s", err)
+            _LOGGER.error("Error fetching circle members from GSD: %s", err)
             raise
         except (KeyError, ValueError, json.JSONDecodeError) as err:
-            _LOGGER.error("Error parsing Donetick circle members response: %s", err)
+            _LOGGER.error("Error parsing GSD circle members response: %s", err)
             return []
 
-    async def async_get_things(self) -> List[DonetickThing]:
-        """Get things from Donetick."""
+    async def async_get_things(self) -> List[GsdThing]:
+        """Get things from GSD."""
         headers = self._headers()
         
         try:
@@ -92,16 +92,16 @@ class DonetickApiClient:
                 data = await response.json()
                 
                 if not isinstance(data, list):
-                    _LOGGER.error("Unexpected response format from Donetick things API")
+                    _LOGGER.error("Unexpected response format from GSD things API")
                     return []
                 
-                return [DonetickThing.from_json(thing) for thing in data]
+                return [GsdThing.from_json(thing) for thing in data]
                 
         except aiohttp.ClientError as err:
-            _LOGGER.error("Error fetching things from Donetick: %s", err)
+            _LOGGER.error("Error fetching things from GSD: %s", err)
             raise
         except (KeyError, ValueError, json.JSONDecodeError) as err:
-            _LOGGER.error("Error parsing Donetick things response: %s", err)
+            _LOGGER.error("Error parsing GSD things response: %s", err)
             return []
 
     async def async_get_thing_state(self, thing_id: int) -> Optional[str]:
@@ -119,10 +119,10 @@ class DonetickApiClient:
                 return data.get("thing", {}).get("state")
                 
         except aiohttp.ClientError as err:
-            _LOGGER.error("Error fetching thing state from Donetick: %s", err)
+            _LOGGER.error("Error fetching thing state from GSD: %s", err)
             raise
         except (KeyError, ValueError, json.JSONDecodeError) as err:
-            _LOGGER.error("Error parsing Donetick thing state response: %s", err)
+            _LOGGER.error("Error parsing GSD thing state response: %s", err)
             return None
 
     async def async_set_thing_state(self, thing_id: int, state: str) -> bool:
@@ -142,7 +142,7 @@ class DonetickApiClient:
                 return True
                 
         except aiohttp.ClientError as err:
-            _LOGGER.error("Error setting thing state in Donetick: %s", err)
+            _LOGGER.error("Error setting thing state in GSD: %s", err)
             raise
         except Exception as err:
             _LOGGER.error("Error setting thing state: %s", err)
@@ -170,13 +170,13 @@ class DonetickApiClient:
                 return data.get("state")
                 
         except aiohttp.ClientError as err:
-            _LOGGER.error("Error changing thing state in Donetick: %s", err)
+            _LOGGER.error("Error changing thing state in GSD: %s", err)
             raise
         except (KeyError, ValueError, json.JSONDecodeError) as err:
-            _LOGGER.error("Error parsing Donetick change state response: %s", err)
+            _LOGGER.error("Error parsing GSD change state response: %s", err)
             return None
 
-    async def async_complete_task(self, choreId: int, completed_by: int = None) -> DonetickTask:
+    async def async_complete_task(self, choreId: int, completed_by: int = None) -> GsdTask:
         """Complete a task"""
         headers = self._headers()
 
@@ -197,16 +197,16 @@ class DonetickApiClient:
             ) as response:
                 response.raise_for_status()
                 data = await response.json()
-                return DonetickTask.from_json(data)
+                return GsdTask.from_json(data)
 
         except aiohttp.ClientError as err:
-            _LOGGER.error("Error completing task in Donetick: %s", err)
+            _LOGGER.error("Error completing task in GSD: %s", err)
             raise
         except (KeyError, ValueError, json.JSONDecodeError) as err:
-            _LOGGER.error("Error parsing Donetick complete task response: %s", err)
+            _LOGGER.error("Error parsing GSD complete task response: %s", err)
             raise
 
-    async def async_create_task(self, name: str, description: str = None, due_date: str = None, created_by: int = None) -> DonetickTask:
+    async def async_create_task(self, name: str, description: str = None, due_date: str = None, created_by: int = None) -> GsdTask:
         """Create a new task"""
         headers = self._headers()
 
@@ -227,16 +227,16 @@ class DonetickApiClient:
             ) as response:
                 response.raise_for_status()
                 data = await response.json()
-                return DonetickTask.from_json(data)
+                return GsdTask.from_json(data)
 
         except aiohttp.ClientError as err:
-            _LOGGER.error("Error creating task in Donetick: %s", err)
+            _LOGGER.error("Error creating task in GSD: %s", err)
             raise
         except (KeyError, ValueError, json.JSONDecodeError) as err:
-            _LOGGER.error("Error parsing Donetick create task response: %s", err)
+            _LOGGER.error("Error parsing GSD create task response: %s", err)
             raise
 
-    async def async_update_task(self, task_id: int, name: str = None, description: str = None, due_date: str = None) -> DonetickTask:
+    async def async_update_task(self, task_id: int, name: str = None, description: str = None, due_date: str = None) -> GsdTask:
         """Update an existing task"""
         headers = self._headers()
 
@@ -260,16 +260,16 @@ class DonetickApiClient:
             ) as response:
                 response.raise_for_status()
                 data = await response.json()
-                return DonetickTask.from_json(data)
+                return GsdTask.from_json(data)
 
         except aiohttp.ClientError as err:
-            _LOGGER.error("Error updating task in Donetick: %s", err)
+            _LOGGER.error("Error updating task in GSD: %s", err)
             raise
         except (KeyError, ValueError, json.JSONDecodeError) as err:
-            _LOGGER.error("Error parsing Donetick update task response: %s", err)
+            _LOGGER.error("Error parsing GSD update task response: %s", err)
             raise
 
-    async def async_skip_task(self, choreId: int, completed_by: int = None) -> DonetickTask:
+    async def async_skip_task(self, choreId: int, completed_by: int = None) -> GsdTask:
         """Skip a task, advancing to the next scheduled occurrence without recording a completion."""
         headers = self._headers()
 
@@ -286,13 +286,13 @@ class DonetickApiClient:
             ) as response:
                 response.raise_for_status()
                 data = await response.json()
-                return DonetickTask.from_json(data)
+                return GsdTask.from_json(data)
 
         except aiohttp.ClientError as err:
-            _LOGGER.error("Error skipping task in Donetick: %s", err)
+            _LOGGER.error("Error skipping task in GSD: %s", err)
             raise
         except (KeyError, ValueError, json.JSONDecodeError) as err:
-            _LOGGER.error("Error parsing Donetick skip task response: %s", err)
+            _LOGGER.error("Error parsing GSD skip task response: %s", err)
             raise
 
     async def async_delete_task(self, task_id: int) -> bool:
@@ -309,13 +309,13 @@ class DonetickApiClient:
                 return True
 
         except aiohttp.ClientError as err:
-            _LOGGER.error("Error deleting task in Donetick: %s", err)
+            _LOGGER.error("Error deleting task in GSD: %s", err)
             raise
         except Exception as err:
             _LOGGER.error("Error deleting task: %s", err)
             return False
 
-    async def async_get_task_detail(self, task_id: int) -> Optional[DonetickTask]:
+    async def async_get_task_detail(self, task_id: int) -> Optional[GsdTask]:
         """Get detailed task timing data when the full API endpoint is available."""
         try:
             async with self._session.get(
@@ -324,7 +324,7 @@ class DonetickApiClient:
                 timeout=API_TIMEOUT
             ) as response:
                 if response.status in (401, 403, 404):
-                    _LOGGER.debug("Donetick task detail endpoint unavailable: HTTP %s", response.status)
+                    _LOGGER.debug("GSD task detail endpoint unavailable: HTTP %s", response.status)
                     return None
 
                 response.raise_for_status()
@@ -332,19 +332,19 @@ class DonetickApiClient:
                 detail = data.get("res", data) if isinstance(data, dict) else data
 
                 if not isinstance(detail, dict):
-                    _LOGGER.debug("Unexpected Donetick task detail response format")
+                    _LOGGER.debug("Unexpected GSD task detail response format")
                     return None
 
-                return DonetickTask.from_json(detail)
+                return GsdTask.from_json(detail)
 
         except aiohttp.ClientError as err:
-            _LOGGER.debug("Unable to fetch Donetick task detail %d: %s", task_id, err)
+            _LOGGER.debug("Unable to fetch GSD task detail %d: %s", task_id, err)
             return None
         except (KeyError, ValueError, json.JSONDecodeError) as err:
-            _LOGGER.debug("Unable to parse Donetick task detail %d: %s", task_id, err)
+            _LOGGER.debug("Unable to parse GSD task detail %d: %s", task_id, err)
             return None
 
-    async def async_get_task_history(self, days: int = 30, include_members: bool = True) -> List[DonetickChoreHistory]:
+    async def async_get_task_history(self, days: int = 30, include_members: bool = True) -> List[GsdChoreHistory]:
         """Get recent chore history when the full API endpoint is available."""
         params = {
             "limit": max(days, 1),
@@ -359,7 +359,7 @@ class DonetickApiClient:
                 timeout=API_TIMEOUT
             ) as response:
                 if response.status in (401, 403, 404):
-                    _LOGGER.debug("Donetick task history endpoint unavailable: HTTP %s", response.status)
+                    _LOGGER.debug("GSD task history endpoint unavailable: HTTP %s", response.status)
                     return []
 
                 response.raise_for_status()
@@ -367,14 +367,14 @@ class DonetickApiClient:
                 history = data.get("res", data) if isinstance(data, dict) else data
 
                 if not isinstance(history, list):
-                    _LOGGER.debug("Unexpected Donetick task history response format")
+                    _LOGGER.debug("Unexpected GSD task history response format")
                     return []
 
-                return DonetickChoreHistory.from_json_list(history)
+                return GsdChoreHistory.from_json_list(history)
 
         except aiohttp.ClientError as err:
-            _LOGGER.debug("Unable to fetch Donetick task history: %s", err)
+            _LOGGER.debug("Unable to fetch GSD task history: %s", err)
             return []
         except (KeyError, ValueError, json.JSONDecodeError) as err:
-            _LOGGER.debug("Unable to parse Donetick task history: %s", err)
+            _LOGGER.debug("Unable to parse GSD task history: %s", err)
             return []

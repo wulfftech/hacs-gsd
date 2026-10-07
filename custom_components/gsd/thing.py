@@ -1,4 +1,4 @@
-"""Donetick thing entities."""
+"""GSD thing entities."""
 import logging
 from typing import Any, Optional
 from homeassistant.core import HomeAssistant, callback
@@ -12,9 +12,9 @@ from homeassistant.components.number import NumberEntity
 from homeassistant.components.text import TextEntity
 from homeassistant.const import STATE_ON, STATE_OFF
 
-from .api import DonetickApiClient
+from .api import GsdApiClient
 from .const import DOMAIN, CONF_URL, CONF_TOKEN
-from .model import DonetickThing
+from .model import GsdThing
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -24,10 +24,10 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
     platform: str = None,
 ) -> None:
-    """Set up Donetick thing entities for specific platform."""
+    """Set up GSD thing entities for specific platform."""
     config = hass.data[DOMAIN][config_entry.entry_id]
     session = async_get_clientsession(hass)
-    client = DonetickApiClient(
+    client = GsdApiClient(
         config[CONF_URL],
         config[CONF_TOKEN], 
         session
@@ -40,28 +40,28 @@ async def async_setup_entry(
         for thing in things:
             # Only create entities for the current platform
             if platform == "switch" and thing.type == "boolean":
-                entities.append(DonetickThingSwitch(client, thing))
+                entities.append(GsdThingSwitch(client, thing))
             elif platform == "number" and thing.type == "number":
-                entities.append(DonetickThingNumber(client, thing))
+                entities.append(GsdThingNumber(client, thing))
             elif platform == "text" and thing.type == "text":
-                entities.append(DonetickThingText(client, thing))
+                entities.append(GsdThingText(client, thing))
             elif platform == "sensor" and thing.type not in ["boolean", "number", "text"]:
-                entities.append(DonetickThingSensor(client, thing))
+                entities.append(GsdThingSensor(client, thing))
         
         if entities:
             async_add_entities(entities, True)
         
     except Exception as err:
-        _LOGGER.error("Error setting up Donetick things: %s", err)
+        _LOGGER.error("Error setting up GSD things: %s", err)
 
-class DonetickThingBase(Entity):
-    """Base class for Donetick thing entities."""
+class GsdThingBase(Entity):
+    """Base class for GSD thing entities."""
     
-    def __init__(self, client: DonetickApiClient, thing: DonetickThing) -> None:
+    def __init__(self, client: GsdApiClient, thing: GsdThing) -> None:
         """Initialize the entity."""
         self._client = client
         self._thing = thing
-        self._attr_unique_id = f"donetick_thing_{thing.id}"
+        self._attr_unique_id = f"gsd_thing_{thing.id}"
         self._attr_name = thing.name
         self._attr_has_entity_name = True
         
@@ -70,8 +70,8 @@ class DonetickThingBase(Entity):
         """Return device information."""
         return {
             "identifiers": {(DOMAIN, "things")},
-            "name": "Donetick Things",
-            "manufacturer": "Donetick",
+            "name": "GSD Things",
+            "manufacturer": "GSD",
             "model": "Things",
         }
 
@@ -84,16 +84,16 @@ class DonetickThingBase(Entity):
         except Exception as err:
             _LOGGER.error("Error updating thing %s: %s", self._thing.name, err)
 
-class DonetickThingSensor(DonetickThingBase, SensorEntity):
-    """Donetick thing sensor entity."""
+class GsdThingSensor(GsdThingBase, SensorEntity):
+    """GSD thing sensor entity."""
     
     @property
     def native_value(self) -> str:
         """Return the state of the sensor."""
         return self._thing.state
 
-class DonetickThingSwitch(DonetickThingBase, SwitchEntity):
-    """Donetick thing switch entity for boolean types."""
+class GsdThingSwitch(GsdThingBase, SwitchEntity):
+    """GSD thing switch entity for boolean types."""
     
     @property
     def is_on(self) -> bool:
@@ -124,8 +124,8 @@ class DonetickThingSwitch(DonetickThingBase, SwitchEntity):
         except Exception as err:
             _LOGGER.error("Error turning off thing %s: %s", self._thing.name, err)
 
-class DonetickThingNumber(DonetickThingBase, NumberEntity):
-    """Donetick thing number entity."""
+class GsdThingNumber(GsdThingBase, NumberEntity):
+    """GSD thing number entity."""
     
     @property
     def native_value(self) -> float:
@@ -147,8 +147,8 @@ class DonetickThingNumber(DonetickThingBase, NumberEntity):
         except Exception as err:
             _LOGGER.error("Error setting number thing %s: %s", self._thing.name, err)
 
-class DonetickThingText(DonetickThingBase, TextEntity):
-    """Donetick thing text entity."""
+class GsdThingText(GsdThingBase, TextEntity):
+    """GSD thing text entity."""
     
     @property
     def native_value(self) -> str:
