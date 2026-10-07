@@ -15,7 +15,8 @@
                 "data": {
                     "show_due_in": "Days ahead to show upcoming tasks",
                     "create_unified_list": "Create \"All Tasks\" list",
-                    "create_assignee_lists": "Create individual task lists per person"
+                    "create_assignee_lists": "Create individual task lists per person",
+                    "refresh_interval": "How often to check GSD for changes"
                 }
             }
         },
@@ -33,7 +34,8 @@
                 "data": {
                     "show_due_in": "Days ahead to show upcoming tasks",
                     "create_unified_list": "Create \"All Tasks\" list",
-                    "create_assignee_lists": "Create individual task lists per person"
+                    "create_assignee_lists": "Create individual task lists per person",
+                    "refresh_interval": "How often to check GSD for changes"
                 }
             }
         }
