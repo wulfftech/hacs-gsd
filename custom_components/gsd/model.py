@@ -210,3 +210,74 @@ class GsdThing:
         """Create a list of GsdThings from JSON data."""
         return [cls.from_json(thing) for thing in data]
     
+
+@dataclass
+class GsdReward:
+    """GSD reward catalog entry."""
+    id: int
+    name: str
+    circle_id: int
+    points: int = 0
+    description: Optional[str] = None
+    is_active: bool = True
+    created_by: Optional[int] = None
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+    @classmethod
+    def from_json(cls, data: dict) -> "GsdReward":
+        """Create a GsdReward from JSON data."""
+        return cls(
+            id=data["id"],
+            name=data["name"],
+            circle_id=data["circleId"],
+            points=data.get("points", 0),
+            description=data.get("description"),
+            is_active=data.get("isActive", True),
+            created_by=data.get("createdBy"),
+            created_at=data.get("createdAt"),
+            updated_at=data.get("updatedAt"),
+        )
+
+    @classmethod
+    def from_json_list(cls, data: List[dict]) -> List["GsdReward"]:
+        """Create a list of GsdRewards from JSON data."""
+        return [cls.from_json(reward) for reward in data]
+
+
+@dataclass
+class GsdRewardRedemption:
+    """GSD reward redemption, in the detail shape the redemptions API returns."""
+    id: int
+    reward_id: int
+    circle_id: int
+    user_id: int
+    points: int = 0
+    status: str = "pending"
+    reward_name: Optional[str] = None
+    username: Optional[str] = None
+    display_name: Optional[str] = None
+    redeemed_at: Optional[str] = None
+    fulfilled_at: Optional[str] = None
+
+    @classmethod
+    def from_json(cls, data: dict) -> "GsdRewardRedemption":
+        """Create a GsdRewardRedemption from JSON data."""
+        return cls(
+            id=data["id"],
+            reward_id=data["rewardId"],
+            circle_id=data["circleId"],
+            user_id=data["userId"],
+            points=data.get("points", 0),
+            status=data.get("status", "pending"),
+            reward_name=data.get("rewardName"),
+            username=data.get("username"),
+            display_name=data.get("displayName"),
+            redeemed_at=data.get("redeemedAt"),
+            fulfilled_at=data.get("fulfilledAt"),
+        )
+
+    @classmethod
+    def from_json_list(cls, data: List[dict]) -> List["GsdRewardRedemption"]:
+        """Create a list of GsdRewardRedemptions from JSON data."""
+        return [cls.from_json(redemption) for redemption in data]

@@ -1,4 +1,6 @@
 """GSD reward sensors: catalog and pending redemptions."""
+from __future__ import annotations
+
 import logging
 
 from homeassistant.core import HomeAssistant
@@ -60,8 +62,10 @@ class GsdRewardsCatalogSensor(_RewardsBase):
         self._attr_native_unit_of_measurement = "rewards"
 
     @property
-    def native_value(self) -> int:
-        data = self.coordinator.data or {}
+    def native_value(self) -> int | None:
+        data = self.coordinator.data
+        if not data:
+            return None
         return len([r for r in data.get("rewards", []) if r.is_active])
 
     @property
@@ -87,8 +91,16 @@ class GsdPendingRedemptionsSensor(_RewardsBase):
         self._attr_native_unit_of_measurement = "redemptions"
 
     @property
-    def native_value(self) -> int:
+    def available(self) -> bool:
+        """Redemptions are admin-only; go unavailable when the token cannot read them."""
         data = self.coordinator.data or {}
+        return bool(data.get("redemptions_available")) and super().available
+
+    @property
+    def native_value(self) -> int | None:
+        data = self.coordinator.data
+        if not data:
+            return None
         return len([r for r in data.get("redemptions", []) if r.status == "pending"])
 
     @property

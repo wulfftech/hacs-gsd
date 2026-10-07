@@ -1,4 +1,6 @@
 """GSD member sensors for points balance."""
+from __future__ import annotations
+
 import logging
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
@@ -48,27 +50,45 @@ class GsdMemberPointsSensor(CoordinatorEntity, SensorEntity):
         self._member = member
         self._config_entry = config_entry
         self._attr_unique_id = f"gsd_{config_entry.entry_id}_member_{member.user_id}_points"
-        self._attr_name = f"{member.display_name} Points"
         self._attr_icon = "mdi:star"
         self._attr_native_unit_of_measurement = "pts"
 
     @property
-    def native_value(self) -> int:
+    def _member_data(self):
+        """Find this sensor's member in the coordinator data."""
+        if not self.coordinator.data:
+            return None
+        for member in self.coordinator.data:
+            if member.user_id == self._member.user_id:
+                return member
+        return None
+
+    @property
+    def available(self) -> bool:
+        """Return True if the member is still in the circle."""
+        return self._member_data is not None and super().available
+
+    @property
+    def name(self) -> str:
+        """Return the member name, following renames on the server."""
+        member = self._member_data or self._member
+        return f"{member.display_name or member.username} Points"
+
+    @property
+    def native_value(self) -> int | None:
         """Return the current points balance."""
-        if self.coordinator.data:
-            for member in self.coordinator.data:
-                if member.user_id == self._member.user_id:
-                    return member.points
-        return 0
+        member = self._member_data
+        return member.points if member else None
 
     @property
     def extra_state_attributes(self) -> dict:
         """Return additional attributes."""
-        if self.coordinator.data:
-            for member in self.coordinator.data:
-                if member.user_id == self._member.user_id:
-                    return {
-                        "points_redeemed": member.points_redeemed,
-                        "username": member.username,
-                    }
-        return {}
+        member = self._member_data
+        if not member:
+            return {}
+        return {
+            "user_id": member.user_id,
+            "points_redeemed": member.points_redeemed,
+            "username": member.username,
+            "role": member.role,
+        }

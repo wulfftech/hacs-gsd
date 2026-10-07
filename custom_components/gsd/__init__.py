@@ -1,6 +1,7 @@
 """The GSD integration."""
 import logging
 from datetime import timedelta
+import aiohttp
 import voluptuous as vol
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.config_entries import ConfigEntry
@@ -75,18 +76,65 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
     await coordinator.async_config_entry_first_refresh()
 
-    # Fetch circle members for resolving user IDs to names
-    circle_members = []
+    # Circle members, for point balances and for resolving user IDs to names.
+    # Supplementary data: the circle endpoint needs a Plus membership server-side,
+    # so a failure here must not take the whole entry down with it.
+    members_coordinator = DataUpdateCoordinator(
+        hass,
+        _LOGGER,
+        name="gsd_members",
+        update_method=client.async_get_circle_members,
+        update_interval=timedelta(seconds=refresh_interval_seconds),
+    )
     try:
-        circle_members = await client.async_get_circle_members()
+        await members_coordinator.async_config_entry_first_refresh()
     except Exception as e:
         _LOGGER.warning("Failed to fetch circle members: %s", e)
+    circle_members = members_coordinator.data or []
+
+    # The rewards catalog is readable by any circle member, but redemptions are
+    # admin-only and answer 403 otherwise. Treat that as a permission state: keep
+    # the catalog, drop the redemptions, and say so once rather than every refresh.
+    redemptions_forbidden = False
+
+    async def async_update_rewards() -> dict:
+        nonlocal redemptions_forbidden
+        rewards = await client.async_get_rewards()
+        try:
+            redemptions = await client.async_get_redemptions()
+        except aiohttp.ClientResponseError as e:
+            if e.status != 403:
+                raise
+            if not redemptions_forbidden:
+                redemptions_forbidden = True
+                _LOGGER.warning(
+                    "GSD token is not a circle admin, so reward redemptions are "
+                    "unavailable; the rewards catalog will still be reported"
+                )
+            return {"rewards": rewards, "redemptions": [], "redemptions_available": False}
+
+        redemptions_forbidden = False
+        return {"rewards": rewards, "redemptions": redemptions, "redemptions_available": True}
+
+    rewards_coordinator = DataUpdateCoordinator(
+        hass,
+        _LOGGER,
+        name="gsd_rewards",
+        update_method=async_update_rewards,
+        update_interval=timedelta(seconds=refresh_interval_seconds),
+    )
+    try:
+        await rewards_coordinator.async_config_entry_first_refresh()
+    except Exception as e:
+        _LOGGER.warning("Failed to fetch GSD rewards: %s", e)
 
     hass.data[DOMAIN][entry.entry_id] = {
         CONF_URL: entry.data[CONF_URL],
         CONF_TOKEN: entry.data[CONF_TOKEN],
         CONF_SHOW_DUE_IN: entry.data.get(CONF_SHOW_DUE_IN, 7),
         "coordinator": coordinator,
+        "members_coordinator": members_coordinator,
+        "rewards_coordinator": rewards_coordinator,
         "client": client,
         "circle_members": circle_members,
     }

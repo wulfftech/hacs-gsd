@@ -7,7 +7,14 @@ import aiohttp
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .const import API_TIMEOUT
-from .model import GsdTask, GsdThing, GsdMember, GsdChoreHistory
+from .model import (
+    GsdTask,
+    GsdThing,
+    GsdMember,
+    GsdChoreHistory,
+    GsdReward,
+    GsdRewardRedemption,
+)
 _LOGGER = logging.getLogger(__name__)
 
 class GsdApiClient:
@@ -76,6 +83,67 @@ class GsdApiClient:
             raise
         except (KeyError, ValueError, json.JSONDecodeError) as err:
             _LOGGER.error("Error parsing GSD circle members response: %s", err)
+            return []
+
+    async def async_get_rewards(self) -> List[GsdReward]:
+        """Get the reward catalog from GSD."""
+        headers = self._headers()
+
+        try:
+            async with self._session.get(
+                f"{self._base_url}/eapi/v1/rewards",
+                headers=headers,
+                timeout=API_TIMEOUT
+            ) as response:
+                response.raise_for_status()
+                data = await response.json()
+
+                if not isinstance(data, list):
+                    _LOGGER.error("Unexpected response format from GSD rewards API")
+                    return []
+
+                return [GsdReward.from_json(reward) for reward in data]
+
+        except aiohttp.ClientError as err:
+            _LOGGER.error("Error fetching rewards from GSD: %s", err)
+            raise
+        except (KeyError, ValueError, json.JSONDecodeError) as err:
+            _LOGGER.error("Error parsing GSD rewards response: %s", err)
+            return []
+
+    async def async_get_redemptions(self) -> List[GsdRewardRedemption]:
+        """Get reward redemptions from GSD. Requires a circle admin token."""
+        headers = self._headers()
+
+        try:
+            async with self._session.get(
+                f"{self._base_url}/eapi/v1/rewards/redemptions",
+                headers=headers,
+                timeout=API_TIMEOUT
+            ) as response:
+                response.raise_for_status()
+                data = await response.json()
+
+                if not isinstance(data, list):
+                    _LOGGER.error("Unexpected response format from GSD redemptions API")
+                    return []
+
+                return [GsdRewardRedemption.from_json(redemption) for redemption in data]
+
+        except aiohttp.ClientResponseError as err:
+            # The server answers 403 unless the token's user is a circle admin. That
+            # is a permission state rather than a fault, so raise it without the
+            # error-level noise and let the caller decide how to carry on.
+            if err.status == 403:
+                _LOGGER.debug("GSD redemptions need a circle admin token: HTTP 403")
+            else:
+                _LOGGER.error("Error fetching redemptions from GSD: %s", err)
+            raise
+        except aiohttp.ClientError as err:
+            _LOGGER.error("Error fetching redemptions from GSD: %s", err)
+            raise
+        except (KeyError, ValueError, json.JSONDecodeError) as err:
+            _LOGGER.error("Error parsing GSD redemptions response: %s", err)
             return []
 
     async def async_get_things(self) -> List[GsdThing]:
