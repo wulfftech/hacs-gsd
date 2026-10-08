@@ -4,7 +4,8 @@ Surfaces [GSD](https://github.com/wulfftech/gsd) chores, tasks, points and rewar
 Home Assistant entities.
 
 Forked from [donetick/donetick-hass-integration](https://github.com/donetick/donetick-hass-integration)
-v2.0.1 and rebranded onto the `gsd` domain. GSD is itself a Donetick fork, so the wire
+and rebranded onto the `gsd` domain. Upstream carries no licence — see
+[NOTICE.md](NOTICE.md) for what came from where. GSD is itself a Donetick fork, so the wire
 format is still Donetick's — the server routes, the `secretkey` header and every JSON
 field name are unchanged. Only the Home Assistant side carries the GSD name.
 
