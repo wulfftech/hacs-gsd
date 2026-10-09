@@ -71,13 +71,18 @@ Changing a `unique_id` format orphans every existing entity in that family. Chan
 
 ## Verifying a change
 
-No test suite. After deploying and restarting:
-
 ```bash
 python -m compileall -q custom_components/gsd
+python tests/test_member_sensor.py
 ```
 
-Then in Home Assistant, **Developer Tools → Template**:
+`tests/` stubs the handful of `homeassistant` modules a file imports and drives the real
+code, so logic can be checked without HA, without dependencies, and without a restart.
+`test_member_sensor.py` is the worked example — copy its stub block for anything else.
+Note the package's `__init__.py` imports aiohttp, so tests register a bare `gsd` package
+pointing at the source directory rather than importing it normally.
+
+Then, after deploying and restarting, in **Developer Tools → Template**:
 
 ```jinja
 {{ integration_entities('gsd') | count }}
