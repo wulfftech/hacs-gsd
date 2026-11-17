@@ -146,3 +146,52 @@ delete_task:
       required: false
       selector:
         text:
+
+approve_chores:
+  name: Approve Chores
+  description: Approve chore completions that are waiting for approval. Give chore IDs, or set all to approve every pending chore. Needs a circle admin or manager token. Returns the chores approved and any that failed.
+  fields:
+    chore_ids:
+      name: Chore IDs
+      description: IDs of the pending chores to approve, as a list (e.g. [12, 13])
+      required: false
+      example: "[12, 13]"
+      selector:
+        object:
+    all:
+      name: All pending
+      description: Approve every chore in the circle that is waiting for approval (ignores chore IDs)
+      required: false
+      default: false
+      selector:
+        boolean:
+    config_entry_id:
+      name: Config Entry ID
+      description: The specific GSD integration to use (optional, uses first if not specified)
+      required: false
+      selector:
+        text:
+
+reject_chores:
+  name: Reject Chores
+  description: Reject chore completions that are waiting for approval, sending them back to be done again. Needs a circle admin or manager token. Returns the chores rejected and any that failed.
+  fields:
+    chore_ids:
+      name: Chore IDs
+      description: IDs of the pending chores to reject, as a list (e.g. [12])
+      required: true
+      example: "[12]"
+      selector:
+        object:
+    note:
+      name: Note
+      description: Optional note recorded with the rejection
+      required: false
+      selector:
+        text:
+    config_entry_id:
+      name: Config Entry ID
+      description: The specific GSD integration to use (optional, uses first if not specified)
+      required: false
+      selector:
+        text:
