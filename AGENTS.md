@@ -15,6 +15,8 @@ custom_components/gsd/
   chore_sensor.py    one sensor per active chore
   member_sensor.py   points balance per circle member
   reward_sensor.py   rewards catalogue + pending redemptions
+  pending_sensor.py  sensor.gsd_pending_approvals
+  binary_sensor.py   checkpoint ("baseline done") sensors, per kid and all kids
   todo.py            unified and per-assignee todo lists
   calendar.py        chore calendar + activity log
   thing.py           GSD "things" — backs switch.py / number.py / text.py
@@ -30,7 +32,8 @@ The server is GSD, a Donetick fork, and still speaks Donetick's wire format. The
 stopped at the Home Assistant boundary.
 
 - **Route paths** — `/eapi/v1/chore`, `/eapi/v1/circle/members`, `/eapi/v1/things`,
-  `/eapi/v1/rewards`, `/api/v1/chores/*`. None contains the word "donetick".
+  `/eapi/v1/rewards`, `/eapi/v1/household/checkpoints`, `/eapi/v1/chore/pending`,
+  `/eapi/v1/chore/approve|reject`, `/api/v1/chores/*`. None contains the word "donetick".
 - **The `secretkey` auth header.** Not `Authorization`.
 - **Server JSON keys** — `assignedTo`, `pointsRedeemed`, `nextDueDate`, `isActive`,
   `rewardName`, `displayName`, `frequencyType`, `redeemedAt`. These are what GSD emits.
@@ -41,6 +44,32 @@ stopped at the Home Assistant boundary.
 
 Server-side routes live in the GSD repo at `D:\Code\gsd`, under `internal/*/api.go`.
 Grep for `eapi` to find them.
+
+## Coordinators and errors
+
+`__init__.py` runs four coordinators: chores, members and rewards on the configured
+refresh interval, and checkpoints (checkpoints + pending approvals) every 30 seconds.
+Every fetch goes through `_coordinator_update`, which turns API failures into
+`UpdateFailed`, so a down server makes entities `unavailable` rather than empty. Don't
+return `[]` from an `api.py` getter on a bad response; raise `GsdApiError`.
+
+`api.GsdApiError` subclasses `HomeAssistantError` and carries the HTTP status and the
+server's `error` text. Service handlers let it propagate so the caller sees why.
+
+Two wire-format traps:
+
+- `POST /eapi/v1/chore/:id/complete` answers `{"res": <chore>, "message": ...}` for a chore
+  that needs approval, and the bare chore otherwise. Newer routes all wrap in `res`;
+  `api._unwrap` accepts both.
+- `PUT /eapi/v1/chore/:id` nulls every field it isn't sent. `async_update_task` fetches the
+  whole chore and sends it back; never send a partial body.
+
+The checkpoint and pending-approvals entities set `entity_id` explicitly
+(`binary_sensor.gsd_all_kids_<checkpoint>_done`, `binary_sensor.gsd_<kid>_<checkpoint>_done`,
+`sensor.gsd_pending_approvals`) because automations reference them. Home Assistant only
+uses that on first registration; after that the registry, keyed on `unique_id`
+(`gsd_<entry_id>_checkpoint_<user_id|all>_<checkpoint>`, `gsd_<entry_id>_pending_approvals`),
+owns the id.
 
 ## Deploying
 
@@ -74,6 +103,7 @@ Changing a `unique_id` format orphans every existing entity in that family. Chan
 ```bash
 python -m compileall -q custom_components/gsd
 python tests/test_member_sensor.py
+python tests/test_checkpoints.py
 ```
 
 `tests/` stubs the handful of `homeassistant` modules a file imports and drives the real

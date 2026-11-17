@@ -2,6 +2,7 @@
 import logging
 from typing import Any, Optional
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -79,10 +80,17 @@ class GsdThingBase(Entity):
         """Update the entity state."""
         try:
             state = await self._client.async_get_thing_state(self._thing.id)
-            if state is not None:
-                self._thing.state = state
         except Exception as err:
-            _LOGGER.error("Error updating thing %s: %s", self._thing.name, err)
+            # Go unavailable rather than keep reporting a stale state as current.
+            if self._attr_available:
+                _LOGGER.warning("Error updating thing %s: %s", self._thing.name, err)
+            self._attr_available = False
+            return
+        if not self._attr_available:
+            _LOGGER.info("Thing %s is reachable again", self._thing.name)
+        self._attr_available = True
+        if state is not None:
+            self._thing.state = state
 
 class GsdThingSensor(GsdThingBase, SensorEntity):
     """GSD thing sensor entity."""
@@ -106,11 +114,13 @@ class GsdThingSwitch(GsdThingBase, SwitchEntity):
             success = await self._client.async_set_thing_state(
                 self._thing.id, "true"
             )
-            if success:
-                self._thing.state = "true"
-                self.async_write_ha_state()
+        except HomeAssistantError:
+            raise
         except Exception as err:
-            _LOGGER.error("Error turning on thing %s: %s", self._thing.name, err)
+            raise HomeAssistantError(f"Error turning on thing {self._thing.name}: {err}") from err
+        if success:
+            self._thing.state = "true"
+            self.async_write_ha_state()
     
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the switch off."""
@@ -118,11 +128,13 @@ class GsdThingSwitch(GsdThingBase, SwitchEntity):
             success = await self._client.async_set_thing_state(
                 self._thing.id, "false"
             )
-            if success:
-                self._thing.state = "false"
-                self.async_write_ha_state()
+        except HomeAssistantError:
+            raise
         except Exception as err:
-            _LOGGER.error("Error turning off thing %s: %s", self._thing.name, err)
+            raise HomeAssistantError(f"Error turning off thing {self._thing.name}: {err}") from err
+        if success:
+            self._thing.state = "false"
+            self.async_write_ha_state()
 
 class GsdThingNumber(GsdThingBase, NumberEntity):
     """GSD thing number entity."""
@@ -141,11 +153,13 @@ class GsdThingNumber(GsdThingBase, NumberEntity):
             success = await self._client.async_set_thing_state(
                 self._thing.id, str(int(value))
             )
-            if success:
-                self._thing.state = str(value)
-                self.async_write_ha_state()
+        except HomeAssistantError:
+            raise
         except Exception as err:
-            _LOGGER.error("Error setting number thing %s: %s", self._thing.name, err)
+            raise HomeAssistantError(f"Error setting number thing {self._thing.name}: {err}") from err
+        if success:
+            self._thing.state = str(value)
+            self.async_write_ha_state()
 
 class GsdThingText(GsdThingBase, TextEntity):
     """GSD thing text entity."""
@@ -161,8 +175,10 @@ class GsdThingText(GsdThingBase, TextEntity):
             success = await self._client.async_set_thing_state(
                 self._thing.id, value
             )
-            if success:
-                self._thing.state = value
-                self.async_write_ha_state()
+        except HomeAssistantError:
+            raise
         except Exception as err:
-            _LOGGER.error("Error setting text thing %s: %s", self._thing.name, err)
+            raise HomeAssistantError(f"Error setting text thing {self._thing.name}: {err}") from err
+        if success:
+            self._thing.state = value
+            self.async_write_ha_state()

@@ -39,5 +39,43 @@
                 }
             }
         }
+    },
+    "services": {
+        "approve_chores": {
+            "name": "Approve chores",
+            "description": "Approve chore completions that are waiting for approval. Give chore IDs, or set all to approve every pending chore. Needs a circle admin or manager token. Returns the chores approved and any that failed.",
+            "fields": {
+                "chore_ids": {
+                    "name": "Chore IDs",
+                    "description": "IDs of the pending chores to approve, as a list (e.g. [12, 13])"
+                },
+                "all": {
+                    "name": "All pending",
+                    "description": "Approve every chore in the circle that is waiting for approval (ignores chore IDs)"
+                },
+                "config_entry_id": {
+                    "name": "Config entry ID",
+                    "description": "The specific GSD integration to use (optional, uses first if not specified)"
+                }
+            }
+        },
+        "reject_chores": {
+            "name": "Reject chores",
+            "description": "Reject chore completions that are waiting for approval, sending them back to be done again. Needs a circle admin or manager token. Returns the chores rejected and any that failed.",
+            "fields": {
+                "chore_ids": {
+                    "name": "Chore IDs",
+                    "description": "IDs of the pending chores to reject, as a list (e.g. [12])"
+                },
+                "note": {
+                    "name": "Note",
+                    "description": "Optional note recorded with the rejection"
+                },
+                "config_entry_id": {
+                    "name": "Config entry ID",
+                    "description": "The specific GSD integration to use (optional, uses first if not specified)"
+                }
+            }
+        }
     }
 }

@@ -10,6 +10,7 @@ from .thing import async_setup_entry as thing_async_setup_entry
 from .chore_sensor import async_setup_chore_sensors
 from .member_sensor import async_setup_member_sensors
 from .reward_sensor import async_setup_reward_sensors
+from .pending_sensor import async_setup_pending_sensor
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -35,3 +36,8 @@ async def async_setup_entry(
         await async_setup_reward_sensors(hass, config_entry, async_add_entities)
     except Exception as err:
         _LOGGER.debug("Reward sensor setup skipped: %s", err)
+
+    try:
+        await async_setup_pending_sensor(hass, config_entry, async_add_entities)
+    except Exception as err:
+        _LOGGER.debug("Pending approvals sensor setup skipped: %s", err)

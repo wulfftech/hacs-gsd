@@ -208,12 +208,12 @@ class GsdTodoListBase(CoordinatorEntity, TodoListEntity):
                 # Determine who should complete this task using smart logic
                 completed_by = await self._get_completion_user_id(client, item, context)
                 
+                # A chore that needs approval comes back pending rather than
+                # completed; that is still a success. The coordinator refresh
+                # below re-reads the list, which puts a recurring chore back
+                # with its next due date.
                 res = await client.async_complete_task(task_id, completed_by)
-                if res.frequency_type != "once":
-                    _LOGGER.debug("Task %s is recurring, updating next due date", res.name)
-                    item.status = TodoItemStatus.NEEDS_ACTION
-                    item.due = res.next_due_date
-                    self.async_update_todo_item(item)
+                _LOGGER.debug("Completed task %s (status %s)", res.name, res.status)
             else:
                 # Update task properties (summary, description, due date)
                 _LOGGER.debug("Updating task %d properties", task_id)
